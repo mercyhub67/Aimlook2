@@ -1062,45 +1062,19 @@ end
 
 
 
-local function TrySkipCrate()
-local aG,aH=
-pcall(
-function()
-return require(c.Modules.Game.CrateSystem.Crate)
-end
-)
+local CrateController = require(ReplicatedStorage.Modules.Game.CrateSystem.Crate)
+task.spawn(function()
+    while true do
+        if EnabledSkip then
+            for _, crate in pairs(CrateController.class.objects) do
+                crate.states.open.set(true)
+                CrateController.skipping.set(true)
+            end
+        end
+        task.wait(0.05)
+    end
+end)
 
-if not(aG and aH)then
-return
-end
-
-task.spawn(
-function()
-local aI=aH.spinning
-if not aI then
-return
-end
-
-
-local aJ=0
-while not aI.get()do
-if aJ>3 then
-break
-end
-task.wait(0.05)
-aJ=aJ+0.05
-end
-
-if aI.get()then
-pcall(
-function()
-aH.skip_spin()
-end
-)
-end
-end
-)
-end
 
 local function SetupAutoSkip()
 local aG=c:WaitForChild("Remotes",5)
