@@ -330,18 +330,32 @@ local function calculateVelocity(player)
 end
 
 local function predictPosition(part, root)
-    if not part then return Vector3.zero end
+    if not part or not root then
+        return part and part.Position or Vector3.zero
+    end
 
     local parentModel = part.Parent
     local player = parentModel and Players:GetPlayerFromCharacter(parentModel)
 
-    -- ใช้ history-based velocity แทน root.Velocity
-    local velocity = (player and calculateVelocity(player)) or Vector3.zero
+    local velocity
+
+    if isAntiAimTarget(part, root) then
+        -- Anti Aim → ใช้ history
+        velocity = (player and calculateVelocity(player)) or Vector3.zero
+    else
+        -- คนปกติ → ใช้ real velocity
+        velocity = root.Velocity
+    end
 
     local ping = getPing()
-    ping = math.clamp(ping, 0.07, 0.22)
+    ping = math.clamp(ping, 0.06, 0.20)
 
-    local speed = Vector3.new(velocity.X, 0, velocity.Z).Magnitude
+    local speed = Vector3.new(
+        velocity.X,
+        0,
+        velocity.Z
+    ).Magnitude
+
     local multiplier = 1.15
 
     if speed > 50 then
@@ -353,7 +367,9 @@ local function predictPosition(part, root)
     end
 
     local horizontalPrediction = Vector3.new(
-        velocity.X, 0, velocity.Z
+        velocity.X,
+        0,
+        velocity.Z
     ) * ping * multiplier
 
     local verticalPrediction = Vector3.new(
@@ -369,8 +385,13 @@ local function predictPosition(part, root)
     )
 
     local headOffset = Vector3.new(0, 0, 0)
+
     if part.Name == "Head" then
-        headOffset = Vector3.new(0, speed > 22 and 0.10 or 0.05, 0)
+        if speed > 22 then
+            headOffset = Vector3.new(0, 0.10, 0)
+        else
+            headOffset = Vector3.new(0, 0.05, 0)
+        end
     end
 
     return part.Position
